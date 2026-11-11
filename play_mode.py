@@ -1,63 +1,68 @@
-from pico2d import *
-import game_world
+from pico2d import (
+    clear_canvas,
+    get_canvas_height,
+    get_canvas_width,
+    get_events,
+    update_canvas,
+)
+from sdl2 import SDL_KEYDOWN, SDL_QUIT, SDLK_ESCAPE, SDLK_SPACE, SDLK_r
+
 import game_framework
-from boy import Boy
-from grass import Grass
-
-boy = None
+from bird_flock import BirdFlock
 
 
-def handle_events():
+flock: BirdFlock | None = None
+paused = False
 
 
-    event_list = get_events()
-    for event in event_list:
+def handle_events() -> None:
+    global paused
+
+    for event in get_events():
         if event.type == SDL_QUIT:
             game_framework.quit()
             return
-        elif event.type == SDL_KEYDOWN and event.key == SDLK_ESCAPE:
+        if event.type != SDL_KEYDOWN:
+            continue
+
+        if event.key == SDLK_ESCAPE:
             game_framework.quit()
-        else:
-            boy.handle_event(event)
+            return
+        if event.key == SDLK_SPACE:
+            paused = not paused
+        elif event.key == SDLK_r and flock is not None:
+            flock.reset()
 
 
-def init():
-    global boy
+def init() -> None:
+    global flock, paused
 
-    boy = Boy()
-    game_world.add_oject(boy)
-
-    grass = Grass()
-    game_world.add_oject(grass, 0)
+    flock = BirdFlock(get_canvas_width(), get_canvas_height())
+    paused = False
 
 
-def pause():
-    boy.pause()
+def pause() -> None:
+    global paused
+    paused = True
 
 
-def resume():
-    pass
+def resume() -> None:
+    global paused
+    paused = False
 
 
-def finish():
-    global boy
-    game_world.clear()
-    boy = None
+def finish() -> None:
+    global flock
+    flock = None
 
 
-def update():
-    game_world.update()
+def update() -> None:
+    if flock is not None and not paused:
+        flock.update(game_framework.frame_time)
 
-def render():
+
+def render() -> None:
     clear_canvas()
-    game_world.render()
+    if flock is not None:
+        flock.draw()
     update_canvas()
-
-
-
-
-
-
-
-
-
